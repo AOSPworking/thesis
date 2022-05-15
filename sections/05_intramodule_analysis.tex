@@ -1,0 +1,109 @@
+\section{模块内分析}\label{intramodule-analysis}
+
+模块内分析是本文所设计的软件变更分析系统中的重要模块。在已知某文件存在变更时，可通过 Ninja 的构建过程描述文件确定中间产物，进而完成对模块内的分析。本节讨论了 Java 语言在变更系统中的应用，选用调用图作为模块内分析工具，并比较了三种可生成调用图的开源工具。
+
+\subsection{模块内分析的困难}
+
+相较于基于 soong 构建系统与 Ninja 底层构建系统的模块间分析，对 AOSP 展开模块内分析拥有更大的复杂性。如第\ref{aosp-build-system}节所述，soong 为了解耦构建过程，借鉴了跨语言构建系统 “Bazel.build” 的语法定义了 Android.bp 文件中使用的 Blueprint 语法，并用 Blueprint 组件将 Android.bp 文件中定义的模块构建方法转化为对应的 ninja 构建规则。也就是说，soong 处理了 AOSP 中多种通用编程语言的复杂性。
+
+然而，soong 仅仅用于构建领域，进行模块内分析无法借助 soong 的组件降低语言复杂性。因此，为每种语言分别撰写分析程序成为 AOSP 模块内分析的唯一途径。尽管不同种语言间分析程序并无差异，但囿于工作量庞大，本文所设计的软件变更分析系统仅考虑 Java 语言在 AOSP 中的应用，并仅考虑 platform/frameworks 下的 67 个仓库，共计 5804 个模块。
+
+\subsection{调用图}
+
+在程序分析当中，存在需要对控制流进行分析的情况。调用图用于描述过程间控制流与数据流，是一种可以保守地逼近程序的过程间控制流的方法。调用图中存储了给定程序中被调用的所有函数以及每个被调用函数的调用点\cite{MoellerS20}。静态调用图往往过分估计调用图中边的数量，这是因为在 OOP 语言中，一个方法的调用与运行时的接收器类型有关\cite{JSP19}。OOP 语言会因 “继承” 特性导致子类可以继承父类中定义的方法。而由于 “继承” 特性的存在，父类中可以通过定义抽象方法交由子类具体实现，而实现 OOP 语言中的 “多态” 特性。由于这种特性在作用时，对于某一个方法无法根据程序代码信息 “静态” 地分析出接收器类型。在经典的程序分析方法中，在 “准确性” 与 “完整性” 两方面的权衡中一般选择后者。这使得静态代码分析中将抽象方法的调用视作以该父类所有子类类型为接收器类型，以各子类中具体实现的方法为被调用方法的调用。因此，其可能包含过量的调用边，但绝不会遗漏。
+
+Java 中的方法调用主要有三类，分别是 static call、special call 和 virtual call。其中 static call 被用于静态方法，virtual call 被用于类构造函数、私有方法、父类中存在并继承至该类的方法。对于大部分 OOP 语言，此二者在编译时均可确定被调用方法的方法签名，即仅有唯一一种方法可能被调用。而 virtual call 包含了其余所有方法调用情况，包括上述 “多态” 特性下的方法调用。因此，virtual call 在静态分析时的被调用方法数量存在大于 1 个的可能，即只有在运行时才能确定 virtual call 方法的接收器类型，进而才能确定方法签名（由方法所在类、方法名、方法返回类型、方法传入参数类型列表构成）。
+
+\subsection{调用图构建算法}
+
+调用图是进行过程间分析的基础。如上所述，在 Java 中的主要方法调用共有三类，而对应到 JVM 指令则有五种——对应 static call 的 invokestatic，对应 special call 的 invokespecial，对应 virtual call 的 invokeinterface 与 invokevirtual。对于 virtual call，由于其只有在具体执行时才可确定真正的接收器对象类型，而方法调用图需要在静态代码的基础上生成，因此需要有一种算法允许代码在非运行情况下找到最可能的接收器对象类型。也就是说，构建调用图的关键在于确定 virtual call 的方法签名。
+
+在程序分析理论的发展过程中，诸如 CHA、VTA、RTA、k-CFA 等调用图生成算法被相继提出。在我所调研的开源调用图构建工具中，CHA 与 k-CFA 两种算法分别由于效率与准确性出众而被采用。
+
+\subsubsection{CHA 算法 (Class Hierarchy Analysis)}
+
+CHA 算法的本质正如其名，是通过查找类的继承关系（即 “边缘”），获得所有可能的接收器类型。
+
+假定需要求解的方法签名为 $S$，根据上文所述，其可被表示为 $S: <OT: RT MN(ArgT...)>$，其中 $OT$ 为接收器对象的类型，$RT$ 为该方法的返回值类型，$MN$ 为该方法的方法名，$ArgT$ 为该方法的传入参数类型列表。
+
+定义 $Dispatch$ 如算法 \ref{alg:dispatch-algorithm} 所示。
+
+\renewcommand{\thealgorithm}{5}
+    \begin{algorithm}
+        \caption{方法派发 Dispatch 算法}
+        \begin{algorithmic}[1]
+            \Require 输入接收器对象类型 $r$
+            \Require 输入方法签名 $s$
+            \Ensure 输出等价的方法签名 $s'$
+            \State $MethodList \Leftarrow c.getMethods$
+            \For{$m \in MethodList$}
+                \If{$m$ is not an abstract method and $m.name == s.name$}
+                    \State \Return $m$
+                \EndIf
+            \EndFor
+            \State $super \Leftarrow r.superclass$
+            \State \Return $Dispatch(super, s)$
+        \end{algorithmic}
+        \label{alg:dispatch-algorithm}
+    \end{algorithm}
+
+在 OOP 语言中，时常将子类对象赋值给父类类型，期望后续通过操作父类类型来使用子类中覆写的方法。“多态” 使得用户看似在使用父类对象，实则是在使用子类对象。CHA 算法选择忽略 “多态” 带来的不确定性，将一切方法的接收器类型视作该方法的 “假设调用类型”——具体而言，是将每一个可能被赋给该类型的其余类型纳入考虑范围，如算法 \ref{alg:CHA-algorithm} 所示。在 Soot 中，构造调用图使用 CHA 算法。
+
+\renewcommand{\thealgorithm}{6}
+    \begin{algorithm}
+        \caption{CHA 算法}
+        \begin{algorithmic}[1]
+            \Require 调用点方法签名 $s$
+            \Ensure 实际方法签名的所有可能 $set$
+            \If{$m$ use invokestatic}
+                \State \Return $\{s\}$
+            \ElsIf{$m$ use invokespecial}
+                \State $RT \Leftarrow s.RT$
+                \State \Return $\{Dispatch(RT, s)\}$
+            \Else
+                \State initialize $set$ as empty set
+                \State $RT \Leftarrow s.RT$
+                \For{$class \in$ \{$RT$ and subclasses of $RT$\}}
+                    \State push $Dispatch(class, s)$ in $set$
+                \EndFor
+                \State \Return $set$
+            \EndIf
+        \end{algorithmic}
+        \label{alg:CHA-algorithm}
+    \end{algorithm}
+
+\subsubsection{k-CFA 算法 (k-Control Flow Analysis)}
+
+控制流算法是静态程序分析中用于确定程序内控制流图的技术。由于该算法不再停留在类与方法级别而是进入程序内分析，因此得到的结果更为精确。k-CFA 是一类算法的统称，其含义为：针对某特定过程，根据所有可能可达此过程的 k 阶调用路径进行程序分析\cite{FLOWSENSITIVECONTROLFLOWANALYSIS}。然而，在调用图生成过程中，并不需要这样复杂的上下文。
+
+除开利用类 “边缘” 信息，构建调用图的另一种方法是模拟堆结构。在静态分析中，堆结构通常用来描述对象分配情况。为了描述堆结构，可能需要找出被实例化过的对象类型、程序中创建对象的位置以及程序中可能使用到的所有对象。0-CFA、ZeroOneCFA 以及 ZeroOneContainerCFA 是三种 CFA 算法，同时也代表了三种描述堆结构的粒度。
+
+0-CFA 是 k-CFA 算法的特例，0-CFA 会基于所有可能调用点的信息分析每个过程。因此，0-CFA 算法即是对全局使用上下文不敏感分析，旨在获得给定方法的所有可能调用点，这与构建方法调用图的目的是相同的。在实现上，0-CFA 中的每个类型都是独立的，这导致在使用 0-CFA 算法时，某类型的所有实例都指向同一位置。
+
+ZeroOneCFA 与 ZeroOneContainerCFA 是 0-CFA 的两种变种算法，前者保证程序中的每一个实例化点的唯一性，后者保证程序中的每一个对象的唯一性。在 WALA 中，构造程序调用图使用 ZeroOneContainerCFA 算法\cite{AHybridSoftwareChangeImpactAnalysis}。
+
+\subsection{调用图构建工具的比较}
+
+\subsubsection{Soot}
+
+Soot 作为 GitHub 上标星最高的开源 Java 程序分析与优化框架，提供了多种中间表示（如流形字节码 Baf、三地址码 Jimple 以及静态单赋值三地址码 Shimple）。Soot 内部使用多个 pack 来分阶段将 Java 字节码或源代码解释和转化成各种中间表示类型。Soot 同时具备全程序分析能力，因此可以通过 Soot 的 wjtp 等 pack 将分散在各个字节码文件或源代码文件中的信息串联起来，并使用 Soot 中内建的 CallGraph 模块利用 CHA 算法构建调用图。
+
+\subsubsection{WALA}
+
+WALA 是由 IBM 公司开发的可用于 Java 与 JavaScript 的程序分析框架。相较于其他开源程序分析框架，WALA 中的内建 CallGraph 模块使用 ZeroOneContainerCFA 算法构建调用图；为使输出与其他程序分析框架类似，WALA 将所有非私有方法与非抽象方法视作入口。因此，WALA 所生成的调用图在数量上更小，准确性更高。
+
+\subsubsection{Java Call Graph}
+
+Java Call Graph 基于 Apache BCEL 开发，是一个通过解析字节码文件，专注于寻找 JVM 中的静态与动态方法调用点的小型项目。相较于其他工具，Java Call Graph 易于扩展、仅考虑调用图生成，并且输入形式单一（Soot 支持字节码与源代码，WALA 同时支持 Jar 文件作为输入）。此外，该工具以 Jar 文件作为输入，因而具备忽略不可达方法的功能。
+
+\subsection{AOSP 中调用图生成问题}
+
+理论上，只要给定单个项目的相关信息（包括项目源代码、源代码版本、程序入口点），就可以获得项目的调用图。然而在实际应用当中，上述工具都在生成调用图存在一定的问题，尤其是在 AOSP 这样的大型系统中。
+
+\begin{itemize}
+    \item AOSP 中的 Java 版本为 11，但诸如 Soot、WALA 提供的源代码前端所能支持的最高版本不超过 8。
+    \item AOSP 并非单一项目。单个仓库中也存在多个模块，各模块下也可能存在多个项目。因此使用 Soot 与 WALA 进行分析时较为困难。
+    \item AOSP 所生成的部分 jar 文件存在无代码区的情况，即 jar 内各 class 文件的部分开放且非抽象方法不存在 code 块。因此这为 Java Call Graph 的分析带来了困难。
+\end{itemize}
+
+综上所述，尽管 AOSP 中存在部分 jar 文件中的方法无代码区，但考虑到 Soot、WALA 以及其他一系列上文未提及的依靠源代码或 class 文件做代码全量分析的框架（如 SPOON、OSA 等）均存在可能的版本支持问题，因此本文所设计的软件变更分析系统选用 Java Call Graph 作为调用图生成工具。

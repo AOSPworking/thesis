@@ -1,6 +1,8 @@
-\include{style/styledef}
+\include{sty/styledef}
+\usepackage{listings}
 
 \begin{document}
+\linespread{1.5}  %1.5倍行距
 
 \pagestyle{firststyle}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -14,17 +16,20 @@
 \pagestyle{mainstyle}
 \input{sections/01_introduction}
 \newpage
-\input{sections/02_preliminaries}
+\input{sections/02_build_system}
 \newpage
-\input{sections/03_algo}
+\input{sections/03_software_diff_extract}
 \newpage
-\input{sections/04_eval}
+\input{sections/04_intermodule_analysis}
 \newpage
-\input{sections/05_conclusion}
+\input{sections/05_intramodule_analysis}
+\newpage
+\input{sections/06_system_design}
+\newpage
+\input{sections/07_summary}
 \newpage
 
 \addcontentsline{toc}{section}{参考文献}
-\bibliographystyle{gbt7714-numerical}
 \bibliography{note}
 
 \newpage
