@@ -1,60 +1,55 @@
 \begin{center}\bf\heiti\xiaoer
-    \ \\
+	\ \\
     软件变更分析系统的实现
 \end{center}
-\begin{center}\heiti\xiaosi
-	\ \\
-	摘\ 要
-\end{center}
 \vspace{1pt}
+\begin{center}\heiti\zihao{4}
+	摘~~要
+\end{center}
 \hspace{2mm}
-{\heiti\zihao{-5}}\quad {\songti\zihao{-5}
+{\heiti}\quad {\songti
     软件维护是指软件系统交付后为更正软件缺陷或添加新功能的修改软件的活动。随着现代软件规模越来越大，软件维护也变得极其困难，其中代码变更分析就是关键难题之一。代码变更分析聚焦于分析变更代码对存量代码的影响。当代码变更后，仅对受到影响的代码进行维护，避免对全量代码维护，进而降低软件维护的成本。
-    
+
     AOSP (Android Open Source Project) 作为 Android 系统的核心组成部分，其选用了特殊的构建系统 soong 与 Ninja，由 C / C++ / Java / Kotlin / Go / Python 等多种语言混合开发，拥有上百万行代码量。这些要素对 AOSP 的代码变更分析造成了极大的困难。
-    
+
     本课题聚焦于 AOSP 的 Frameworks 开源软件项目，分析 AOSP Frameworks 中进行代码变更分析的困难要素。Frameworks 中包含 Android 应用开发的核心 Java API 框架、Android 运行时与 C / C++ 库以及对各种硬件的抽象封装，是 AOSP 中最为重要的开源部分之一。本文将从 AOSP 构建系统 GNU Make 与 soong 的整体架构、基于 git 与 GumTree 的软件变更获取、AOSP 底层构建系统 Ninja 的模块间分析能力和基于 Java Call Graph 的调用图生成四个方面分析本次毕业设计过程中设计与开发模式、研究的过程与方法，并给出软件变更分析系统的一种实现方案。
 }
 %局部修改字体字号{\字体名\zihao{} ...}
 \par
 \vskip 5mm
 \noindent {\heiti\zihao{5}关键词:}\quad{
-\songti\zihao{-5}  
-软件维护, 
-\quad 
-变更分析, 
-\quad 
-AOSP
-}~\\
+\songti
+软件维护,
+\quad
+变更分析,
+\quad
+AOSP}~\\
 
 
 
 \newpage
 % \vskip 4mm
-\begin{center}\bf\heiti\xiaoer
-    \ \\
-    {\bf {An Implementation of Software Change Analysis System}}
-\end{center}
-\begin{center}\heiti\xiaosi
-    \ \\
-	{\bf {ABSTRACT} }
+\begin{center}\heiti\xiaoer
+	{\bf {An Implementation of Software Change Analysis System} }
 \end{center}
 \vspace{1pt}
-\hspace{2mm}
-{\heiti\zihao{-5}}\quad {\songti\zihao{-5}
-    Software maintenance is the activity of modifying software to correct software defects or add new features after a software system has been delivered. With the increasing size of modern software, software maintenance has become extremely difficult, with code change analysis being one of the key challenges. Code change analysis focuses on analyzing the impact of code changes on the stock code. When the code is changed, only the affected code is maintained, avoiding the maintenance of the full amount of code and thus reducing the cost of software maintenance.
-    
-    AOSP (Android Open Source Project) is the core component of Android system, which chooses a special build system soong and Ninja, developed by a mixture of C / C++ / Java / Kotlin / Go / Python and other languages, and has millions of lines of code. These elements make it extremely difficult to analyze code changes in AOSP.
-    
-    This topic focuses on AOSP's Frameworks open source software project and analyzes the difficulties of code change analysis in AOSP Frameworks, which contains the core Java API framework for Android application development, Android runtime and C/C++ libraries, and abstract packaging for various hardware. AOSP is one of the most important open source parts. In this paper, we will analyze the design and development mode, process and method of this graduation design process from four aspects: the overall architecture of AOSP build system GNU Make and soong, software change acquisition based on git and GumTree, inter-module analysis capability of AOSP underlying build system Ninja, and call graph generation based on Java Call Graph. A solution for the implementation of the software change analysis system is given.
+\begin{center}\heiti\zihao{4}
+	\bf{	ABSTRACT}
+\end{center}
+\vspace{-4mm}
+{\heiti}\quad {\songti
+Software maintenance is the activity of modifying software to correct software defects or add new features after a software system has been delivered. With the increasing size of modern software, software maintenance has become extremely difficult, with code change analysis being one of the key challenges. Code change analysis focuses on analyzing the impact of code changes on the stock code. When the code is changed, only the affected code is maintained, avoiding the maintenance of the full amount of code and thus reducing the cost of software maintenance.
+
+AOSP (Android Open Source Project) is the core component of Android system, which chooses a special build system soong and Ninja, developed by a mixture of C / C++ / Java / Kotlin / Go / Python and other languages, and has millions of lines of code. These elements make it extremely difficult to analyze code changes in AOSP.
+
+This topic focuses on AOSP's Frameworks open source software project and analyzes the difficulties of code change analysis in AOSP Frameworks, which contains the core Java API framework for Android application development, Android runtime and C/C++ libraries, and abstract packaging for various hardware. AOSP is one of the most important open source parts. In this paper, we will analyze the design and development mode, process and method of this graduation design process from four aspects: the overall architecture of AOSP build system GNU Make and soong, software change acquisition based on git and GumTree, inter-module analysis capability of AOSP underlying build system Ninja, and call graph generation based on Java Call Graph. A solution for the implementation of the software change analysis system is given.
 }\par
 
 
-\vskip 4mm 
-\noindent{\heiti\zihao{5}\bf {Keywords:}}\quad
-{\songti\zihao{-5}
-software maintenance, \quad 
-change analysis, \quad 
-AOSP
-}
+\vskip 4mm
+\noindent{\heiti\zihao{5}\bf {Key words:}}\quad
+{\songti
+software maintenance, \quad
+change analysis, \quad
+AOSP}
 \par
