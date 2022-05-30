@@ -14,6 +14,7 @@ keywords = {Duplicate detection, Bug reports, Information retrieval, Feature sel
 @unpublished{PLATFORMARCHITECTURE,
 title = {platform architecture},
 author = {Google},
+url = {https://developer.android.com/guide/platform},
 year = {2020},
 note = {https://developer.android.com/guide/platform}
 }
@@ -21,6 +22,7 @@ note = {https://developer.android.com/guide/platform}
 @unpublished{NINJABUILD,
 title = {Ninja, a small build system with focus on speed},
 author = {Google and {evmar}},
+url = {https://ninja-build.org/},
 year = {2020},
 note = {https://ninja-build.org/}
 }
@@ -40,6 +42,7 @@ note = {https://ninja-build.org/}
 author = {Webb Miller and Eugene W. Myers},
 year = {1985},
 title = {A File Comparison Program},
+url = {https://publications.mpi-cbg.de/Miller_1985_5440.pdf},
 note = {https://publications.mpi-cbg.de/Miller_1985_5440.pdf}
 }
 
@@ -75,7 +78,10 @@ note = {https://publications.mpi-cbg.de/Miller_1985_5440.pdf}
 
 @book{DISCRETEMATH,
 author = {Wanling Qu and Suyun Geng and Li'ang Zhang},
-title = {图的基本概念，图论},
+title = {离散数学},
+chapter = {图论，图的基本概念},
+publisher = {高等教育出版社},
+address = {北京},
 booktitle = {离散数学 (第 2 版)},
 pages = {293--295},
 year = {2015},
@@ -153,6 +159,7 @@ note = {AAI3488016}
 	booktitle     = "{A Hybrid Software Change Impact Analysis for Large-scale Enterprise Systems}",
 	pages         = "137--139",
 	year          = 2015,
+  url           = {"https://macsphere.mcmaster.ca/bitstream/11375/18275/2/Chen_Wen_201509_PhD.pdf"},
 	note          = "https://macsphere.mcmaster.ca/bitstream/11375/18275/2/Chen_Wen_201509_PhD.pdf"
 }
 
@@ -171,4 +178,76 @@ numpages = {13},
 keywords = {Call Graph Construction, Libraries, Java},
 location = {Seattle, WA, USA},
 series = {FSE 2016}
+}
+
+@book{gamma1994design,
+  title={Design Patterns: Elements of Reusable Object-Oriented Software},
+  author={Gamma, E. and Helm, R. and Johnson, R. and Vlissides, J.},
+  isbn={9780321700698},
+  lccn={94034264},
+  series={Addison-Wesley Professional Computing Series},
+  url={https://books.google.co.jp/books?id=6oHuKQe3TjQC},
+  year={1994},
+  publisher={Pearson Education}
+}
+
+@book{UNDERSTANDINGJVM,
+  title={深入理解 Java 虚拟机：JVM 高级特性与最佳实践(Understanding the JVM Advanced Features and Best Practices, Third Edition)},
+  author={Zhiming Zhou},
+  address={北京},
+  isbn={9787111641247},
+  year={2019},
+  publisher={China Machine Press},
+  pages = {298--300},
+}
+
+@inbook{10.1145/3238147.3238219,
+author = {Huang, Kaifeng and Chen, Bihuan and Peng, Xin and Zhou, Daihong and Wang, Ying and Liu, Yang and Zhao, Wenyun},
+title = {ClDiff: Generating Concise Linked Code Differences},
+year = {2018},
+isbn = {9781450359375},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+url = {https://doi.org/10.1145/3238147.3238219},
+abstract = {Analyzing and understanding source code changes is important in a variety of software maintenance tasks. To this end, many code differencing and code change summarization methods have been proposed. For some tasks (e.g. code review and software merging), however, those differencing methods generate too fine-grained a representation of code changes, and those summarization methods generate too coarse-grained a representation of code changes. Moreover, they do not consider the relationships among code changes. Therefore, the generated differences or summaries make it not easy to analyze and understand code changes in some software maintenance tasks.  In this paper, we propose a code differencing approach, named CLDIFF, to generate concise linked code differences whose granularity is in between the existing code differencing and code change summarization methods. The goal of CLDIFF is to generate more easily understandable code differences. CLDIFF takes source code files before and after changes as inputs, and consists of three steps. First, it pre-processes the source code files by pruning unchanged declara- tions from the parsed abstract syntax trees. Second, it generates concise code differences by grouping fine-grained code differences at or above the statement level and describing high-level changes in each group. Third, it links the related concise code differences according to five pre-defined links. Experiments with 12 Java projects (74,387 commits) and a human study with 10 participants have indicated the accuracy, conciseness, performance and usefulness of CLDIFF.},
+booktitle = {Proceedings of the 33rd ACM/IEEE International Conference on Automated Software Engineering},
+pages = {679–690},
+numpages = {12}
+}
+
+@article{10.1145/263700.264352,
+author = {Grove, David and DeFouw, Greg and Dean, Jeffrey and Chambers, Craig},
+title = {Call Graph Construction in Object-Oriented Languages},
+year = {1997},
+issue_date = {Oct. 1997},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+volume = {32},
+number = {10},
+issn = {0362-1340},
+url = {https://doi.org/10.1145/263700.264352},
+doi = {10.1145/263700.264352},
+abstract = {Interprocedural analyses enable optimizing compilers to more precisely model the effects of non-inlined procedure calls, potentially resulting in substantial increases in application performance. Applying interprocedural analysis to programs written in object-oriented or functional languages is complicated by the difficulty of constructing an accurate program call graph. This paper presents a parameterized algorithmic framework for call graph construction in the presence of message sends and/or first class functions. We use this framework to describe and to implement a number of well-known and new algorithms. We then empirically assess these algorithms by applying them to a suite of medium-sized programs written in Cecil and Java, reporting on the relative cost of the analyses, the relative precision of the constructed call graphs, and the impact of this precision on the effectiveness of a number of interprocedural optimizations.},
+journal = {SIGPLAN Not.},
+month = {oct},
+pages = {108–124},
+numpages = {17}
+}
+
+@inproceedings{10.1145/2393596.2393656,
+author = {Tao, Yida and Dang, Yingnong and Xie, Tao and Zhang, Dongmei and Kim, Sunghun},
+title = {How Do Software Engineers Understand Code Changes? An Exploratory Study in Industry},
+year = {2012},
+isbn = {9781450316149},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+url = {https://doi.org/10.1145/2393596.2393656},
+doi = {10.1145/2393596.2393656},
+abstract = {Software evolves with continuous source-code changes. These code changes usually need to be understood by software engineers when performing their daily development and maintenance tasks. However, despite its high importance, such change-understanding practice has not been systematically studied. Such lack of empirical knowledge hinders attempts to evaluate this fundamental practice and improve the corresponding tool support.To address this issue, in this paper, we present a large-scale quantitative and qualitative study at Microsoft. The study investigates the role of understanding code changes during software-development process, explores engineers' information needs for understanding changes and their requirements for the corresponding tool support. The study results reinforce our beliefs that understanding code changes is an indispensable task performed by engineers in software-development process. A number of insufficiencies in the current practice also emerge from the study results. For example, it is difficult to acquire important information needs such as a change's completeness, consistency, and especially the risk imposed by it on other software components. In addition, for understanding a composite change, it is valuable to decompose it into sub-changes that are aligned with individual development issues; however, currently such decomposition lacks tool support.},
+booktitle = {Proceedings of the ACM SIGSOFT 20th International Symposium on the Foundations of Software Engineering},
+articleno = {51},
+numpages = {11},
+keywords = {information needs, code review, tool support, code change},
+location = {Cary, North Carolina},
+series = {FSE '12}
 }

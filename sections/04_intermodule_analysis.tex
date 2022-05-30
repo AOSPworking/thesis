@@ -2,7 +2,7 @@
 
 模块间分析是本文所设计的软件变更分析系统中最为重要的部分。AOSP 由若干仓库组成，各仓库又由若干模块组成，然而各仓库与模块并非完全封闭的。在构建时，某仓库下的模块可能会使用其他仓库下的另一模块，这导致单模块变动可能产生难以想象的影响。因此，对 AOSP 进行模块间分析是极其重要的。本节从 soong 的模块概念入手，扩展了有向图概念，提出了基于 AOSP 完全构建过程的模块间分析算法。
 
-\subsection{soong 的模块概念}
+\subsection{soong 构建系统的模块概念}
 
 soong 作为 Android Tiramisu 使用的顶层构建系统，继承了 Android Nought 以 GNU Make 为主导的构建系统下模块的概念，如图\ref{fig:aosp-3-layer}所示使用 “仓库-模块-文件” 三层为庞大的 AOSP 分级。
 
@@ -12,14 +12,14 @@ soong 作为 Android Tiramisu 使用的顶层构建系统，继承了 Android No
     \item 文件既可以是用于产生编译产物的输入文件，也可以是单次构建过程的输出文件。文件是 AOSP 构建系统视角下的最基本单元。
 \end{itemize}
 
-\begin{figure}
+\begin{figure}[htb]
     \centering
     \includegraphics[width=.8\textwidth]{figures/3-layer.png}
     \caption{AOSP 三层架构}
     \label{fig:aosp-3-layer}
 \end{figure}
 
-\subsection{有向无环图}
+\subsection{基于有向无环图的完全构建过程建模}
 
 \begin{dfn}
     给定一个有序的二元组 $<V, E>$，其中 $V$ 是一个被称作 “顶点集” 的非空有穷集。$\forall v \in V$, $v$ 被称作 “顶点”。当 $E$ 是笛卡尔积 $V \times V$ 的有穷多重子集时，$\forall e \in E$，$e$ 被称作 "有向边"。\cite{DISCRETEMATH}
@@ -49,13 +49,14 @@ soong 作为 Android Tiramisu 使用的顶层构建系统，继承了 Android No
 
 此外，为满足单一任务仅仅被执行一次，图中任意一个节点 $v_k \in V$，都不应存在一条回路。满足以上性质的图被称作有向无环图（如图\ref{fig:dag}所示）。
 
-\begin{figure}
+\begin{figure}[htb]
     \centering
     \includegraphics[width=.7\textwidth]{figures/dag.png}
     \caption{有向无环图示例}
     \label{fig:dag}
 \end{figure}
 
+\vskip 13.8pt
 \renewcommand{\thealgorithm}{2}
     \begin{algorithm}
         \caption{有向图拓扑排序算法}
@@ -83,6 +84,7 @@ soong 作为 Android Tiramisu 使用的顶层构建系统，继承了 Android No
         \end{algorithmic}
         \label{alg:topology-sort}
     \end{algorithm}
+    \vskip 13.8pt
 
 结合有向图拓扑排序算法，可易得引理\ref{lem:dag}。
 
@@ -93,13 +95,11 @@ soong 作为 Android Tiramisu 使用的顶层构建系统，继承了 Android No
 
 然而不足的是，拓扑排序受到有向图定义的限制，一条边仅能够连接始点与终点两个节点。这一缺陷降低了简单有向图对实际问题的抽象能力，下一小节将拓展现有有向图概念，使之具备描述构建系统中构建过程的能力。
 
-\subsection{完全构建过程}
-
 对于一个构建系统而言，其用于描述完全构建过程的 manifest 中定义了一系列独立构建过程的集合 $B$。对于单一过程 $b \in B$，其具备输入文件 $f_{in}$ 以及输出文件 $f_{out}$，可将该过程记为 $b_{<f_{in}, f_{out}>}$。若将所有输入输出文件的并集 $\bigcup_{b_{<f_{in}, f_{out}>} \in B} (f_{in} + f_{out})$ 记作 $F$，则 manifest 中定义的完全构建过程可被表示为 $P = <F, B>$。
 
 由有向图概念可知，完全构建过程 $P$ 是一种扩展了 “边” 概念的有向图。在有向图中，$E$ 是顶点集 $V$ 的笛卡儿积 $V \times V$ 的有穷多重子集。而在完全构建过程中，$B$ 是文件集合 $F$ 非空子集 $f \subseteq F\ and\ f \neq \emptyset$ 的笛卡儿积 $f \times f$ 的有穷多重子集。后称满足上述性质的数据结构为 “扩展有向图”（如图\ref{fig:build-process}所示）。
 
-\begin{figure}
+\begin{figure}[htb]
     \centering
     \includegraphics[width=.7\textwidth]{figures/build-process.png}
     \caption{构建过程示例}
@@ -119,7 +119,7 @@ soong 作为 Android Tiramisu 使用的顶层构建系统，继承了 Android No
 
 \begin{lem}
     给定一个完全构建过程 $P = <F, B>$，其中 $V$ 与 $B$ 是有限集。
-\end{lem}   
+\end{lem}
 
 \begin{lem}
     给定一个完全构建过程 $P = <F, B>$，定义对其中单一构建过程之间的 “拓扑排序” 为完全构建过程 $P$ 中所涉及文件集合 $F$ 的线性排序。规则为：若图中存在两顶点 $f_i, f_j \subseteq F$，则存在一条有向边 $b \in B$，且 $b$ 以 $f_i$ 为始点，$f_j$ 为终点，则记该有向边为 $b_{<f_i, f_j>}$。在拓扑排序中，$f_i$ 中所有文件 $f' \in f_i$ 在 $f_j$ 中所有文件 $f'' \in f_j$ 之前。
@@ -127,6 +127,7 @@ soong 作为 Android Tiramisu 使用的顶层构建系统，继承了 Android No
 
 由于对项目构建过程是可自行终止的，所以对完全构建过程 $P = <F, B>$ 进行拓扑排序可根据有向图拓扑排序算法扩展为算法 \ref{alg:total-build-topology-sort}。
 
+\vskip 13.8pt
 \renewcommand{\thealgorithm}{3}
     \begin{algorithm}
         \caption{完全构建过程的拓扑排序算法}
@@ -146,7 +147,7 @@ soong 作为 Android Tiramisu 使用的顶层构建系统，继承了 Android No
                         \If{$f \in q$}
                             \State \Return false
                         \EndIf
-                        \State $q \Leftarrow f$                         
+                        \State $q \Leftarrow f$
                     \EndFor
                 \EndFor
             \EndWhile
@@ -154,16 +155,15 @@ soong 作为 Android Tiramisu 使用的顶层构建系统，继承了 Android No
         \end{algorithmic}
         \label{alg:total-build-topology-sort}
     \end{algorithm}
+    \vskip 13.8pt
 
-\subsection{Ninja 中对构建过程的描述}
-
-为提供一个高效的指令执行环境，Ninja 定义了一套不同于 Makefile 的 manifest 语法（由于 Ninja 的 manifest 文件以 “ninja” 作为后缀，此后使用 ninja 代指这套 manifest 语法）。
+AOSP 为获得一个高效的指令执行环境，使用 soong 直接调用的 Ninja 作为其底层构建系统。Ninja 定义了一套不同于 Makefile 的 manifest 语法（由于 Ninja 的 manifest 文件以 “ninja” 作为后缀，此后使用 ninja 代指这套 manifest 语法）。
 
 相较于 Makefile，ninja 去除了诸如 “分支语句”、“过程定义”、“变量覆写” 等复杂语法，极大地降低了 Ninja 构建系统在运行时所需工作。ninja 专注于简洁地叙述构建过程，其语法能够最为简单地描述构建过程。
 
 ninja 使用 “rule” （后文称为 “规则”）定义有向无环图中的边类型。在规则中，需要定义具体执行的语句，同时放置输入输出参数到恰当位置中。在规则被调用时，输入文件会被传入，同时生成符合要求的输出文件。除执行语句外，在规则语法中还可以定义最大线程数等参数进行优化。ninja 中的规则支持多输入文件到多输出文件的映射，且输入文件按照是否直接出现在执行语句中被分为 “直接依赖”、“间接依赖” 以及 “order only 依赖” 三种。ninja 使用 “build” （后文称为 “构建”）声明并实例化有向无环图中的边。ninja 格式的文件中定义了一系列构建（以 soong 构建系统产物之一 build.ninja 为例，其中使用了 90\% 以上文本描述构建）。构建是规则的实例化表现形式，其需要指定所使用的规则名，并给出规则内语句执行时需要的具体输入文件。
 
-\subsection{模块间分析算法}
+\subsection{基于完全构建过程的模块间分析算法}
 
 作为本文所设计软件变更分析系统的一部分，模块间分析需要根据发生变更的文件得出该变更可能影响的所有文件。
 
@@ -174,7 +174,7 @@ ninja 使用 “rule” （后文称为 “规则”）定义有向无环图中�
     \item 文件 $a$ 改变，$\exists\ b_{<f_{in}, f_{out}>} \in B$，且文件 $a \in f_{in}$，$f_{in}$ 中所有除 $a$ 之外的文件都可能因 $a$ 的改变而受到间接影响，而 $f_{in}$ 中其他文件可能来自于其他模块。如图\ref{fig:inter-module}中 a.2 对 sub.3 与 sub.4 的影响。
 \end{enumerate}
 
-\begin{figure}
+\begin{figure}[htb]
     \centering
     \includegraphics[width=.8\textwidth]{figures/inter-module.png}
     \caption{模块间影响示意图}
@@ -190,6 +190,7 @@ ninja 使用 “rule” （后文称为 “规则”）定义有向无环图中�
 
 为获取有关构建过程的更多信息，本文所设计的软件变更分析系统采用广度优先搜索，如算法\ref{alg:intermodule-analysis}所示。综上所述，在扩展有向图 $P = <F, B>$ 中搜索可能受影响文件的本质仍是图可达性问题，该问题仍可在 $O(F + B)$ 中解决。\cite{GRAPHREACHABILITY}
 
+\vskip 13.8pt
 \renewcommand{\thealgorithm}{4}
     \begin{algorithm}
         \caption{基于 Ninja 的过程间分析算法}
@@ -225,3 +226,4 @@ ninja 使用 “rule” （后文称为 “规则”）定义有向无环图中�
         \end{algorithmic}
         \label{alg:intermodule-analysis}
     \end{algorithm}
+    \vskip 13.8pt

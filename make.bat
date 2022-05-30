@@ -15,11 +15,11 @@ if %flag% == thesis (
 	call :thesis
 	if ERRORLEVEL 1 (
 		echo.
-		echo "Error! Please check the %THESIS%.log for more details..."
+		echo Error! Please check the %THESIS%.log for more details . . .
 		pause
 	) else (
 		call :clean
-		echo "Finished!""
+		echo Finished!
 		pause
 	)
 	goto :EOF
@@ -53,17 +53,17 @@ if %flag% == wordcount (
 goto :EOF
 
 :thesis
-	echo Compile...
-	latexmk -quiet -file-line-error -halt-on-error -interaction=nonstopmode %THESIS% 2>nul
+	echo Compile . . .
+	latexmk -xelatex -synctex=1 -quiet -interaction=nonstopmode -file-line-error -halt-on-error -shell-escape %THESIS% 2>nul
 goto :EOF
 
 :clean
-	echo Clean files...
+	echo Clean files . . .
 	latexmk -quiet -c %THESIS% 2>nul
 goto :EOF
 
 :cleanall
-	echo Clean all files...
+	echo Clean all files . . .
 	latexmk -quiet -C %THESIS% 2>nul
 	if exist %THESIS%.pdf (
 		echo Close the file: '%THESIS%.pdf'!
