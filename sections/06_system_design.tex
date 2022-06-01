@@ -139,7 +139,7 @@ Ninja\_hacked 项目巧妙借助了 Ninja 中的 “插件功能”，即 Ninja 
     \label{fig:cg-generator-jcallgraph}
 \end{figure}
 
-cg\_generator 模块需要传入真实存在的 jar 文件。在具体实现上，项目使用 util.jar 中的 JarFile 与 JarInfo 获得 jar 文件内各 class 文件入口以及 jar 文件元信息。对于每一个 class 文件，项目都使用一个独立的 apache.bcel 中的 ClassParser 解析字节码获得 JavaClass 类的实例化对象。针对每一个 JavaClass，项目中使用自定义的具体访问者 ClassVisitor 进行独立分析。JavaClass 中存在本属于字节码文件内但已被解析的常量池、属性表集合以及方法表集合等概念。方法表集合中存放了访问标志与各类索引\cite{UNDERSTANDINGJVM}。对于 JavaClass 对象内的每个方法，ClassParser 已将其实例化为一系列 Method 对象。在方法属性表中的 Code 属性里，存放了方法的字节码指令集合\cite{UNDERSTANDINGJVM}。针对每一个 Method，项目中又使用自定义的具体访问者 MethodVisitor 进行独立分析。每个 Method 中都存在一条由一系列类型不同但都继承于同一父类 Instruction 的子类组成的链表，因此 MethodVisitor 遍历当前方法下的所有 instruction，对每条 instruction 都进行判断，确定在生成方法调用图这一场景下是否需要将其纳入考虑范围内。诸如上述中 JavaCLass、Method、Instruction 等在内存中不可修改的数据结构，以 Instruction 类为例，apache.bcel 使用如图\ref{fig:cg-generator-object-structure}所示的关系提供用户可自定义新操作方法的接口。
+cg\_generator 模块需要传入真实存在的 jar 文件。在具体实现上，项目使用 util.jar 中的 JarFile 与 JarInfo 获得 jar 文件内各 class 文件入口以及 jar 文件元信息。对于每一个 class 文件，项目都使用一个独立的 Apache BCEL 中的 ClassParser 解析字节码获得 JavaClass 类的实例化对象。针对每一个 JavaClass，项目中使用自定义的具体访问者 ClassVisitor 进行独立分析。JavaClass 中存在本属于字节码文件内但已被解析的常量池、属性表集合以及方法表集合等概念。方法表集合中存放了访问标志与各类索引\cite{UNDERSTANDINGJVM}。对于 JavaClass 对象内的每个方法，ClassParser 已将其实例化为一系列 Method 对象。在方法属性表中的 Code 属性里，存放了方法的字节码指令集合\cite{UNDERSTANDINGJVM}。针对每一个 Method，项目中又使用自定义的具体访问者 MethodVisitor 进行独立分析。每个 Method 中都存在一条由一系列类型不同但都继承于同一父类 Instruction 的子类组成的链表，因此 MethodVisitor 遍历当前方法下的所有 instruction，对每条 instruction 都进行判断，确定在生成方法调用图这一场景下是否需要将其纳入考虑范围内。诸如上述中 JavaCLass、Method、Instruction 等在内存中不可修改的数据结构，以 Instruction 类为例，Apache BCEL 使用如图\ref{fig:cg-generator-object-structure}所示的关系提供用户可自定义新操作方法的接口。
 
 \begin{figure}[htb]
     \centering
@@ -150,7 +150,7 @@ cg\_generator 模块需要传入真实存在的 jar 文件。在具体实现上�
 
 对于 Java 语言，Java 7 增加的 invokedynamic 指令是使用字节码文件分析调用图的问题之一，并且在 Java 8 中新增的 Lambda 函数底层便是使用该 JVM 指令执行。invokedynamic 指令原本有 4 个操作数，其中前两个操作数共同构成了查找常量池中 CONSTANT\_InvokeDynamic\_info 的索引，以便于查找 Bootstrap method 并将参数传入。对于每一条 invokedynamic 指令执行的位置，JVM 都将其视为一个动态调用点，cg\_generator 模块使用容器来存储调用点所在的方法以及调用的目标。
 
-为使用 apache.bcel 提供的访问者模式接口，需要定义一系列访问者。由于本系统构建调用图不需要与方法同级别的信息（如函数形参类型、返回值类型等），所以在 cg\_generator 中，总共定义了 ClassVisitor 与 InstructionVisitor 两类具体访问者以及作为假访问者的 MethodVisitor。访问者与具体访问者间的关系如图\ref{fig:cg-generator-client}所示。需要说明的是，由于 JavaClass 中成员与 Method 中成员大致相仿（JavaClass 下有 Method 列表，Method 下有 Instruction 链表），纵使 MethodVisitor 并未覆写任何访问者模式相关的方法，但 ClassVisitor 与 MethodVisitor 的设计仍然十分相似。
+为使用 Apache BCEL 提供的访问者模式接口，需要定义一系列访问者。由于本系统构建调用图不需要与方法同级别的信息（如函数形参类型、返回值类型等），所以在 cg\_generator 中，总共定义了 ClassVisitor 与 InstructionVisitor 两类具体访问者以及作为假访问者的 MethodVisitor。访问者与具体访问者间的关系如图\ref{fig:cg-generator-client}所示。需要说明的是，由于 JavaClass 中成员与 Method 中成员大致相仿（JavaClass 下有 Method 列表，Method 下有 Instruction 链表），纵使 MethodVisitor 并未覆写任何访问者模式相关的方法，但 ClassVisitor 与 MethodVisitor 的设计仍然十分相似。
 
 \begin{figure}[htb]
     \centering

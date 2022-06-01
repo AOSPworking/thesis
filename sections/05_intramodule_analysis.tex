@@ -4,7 +4,7 @@
 
 \subsection{AOSP 背景下模块内分析的困难}
 
-相较于基于 soong 构建系统与 Ninja 底层构建系统的模块间分析，对 AOSP 展开模块内分析拥有更大的复杂性。如第\ref{aosp-build-system}节所述，soong 为了解耦构建过程，借鉴了跨语言构建系统 “Bazel.build” 的语法定义了 Android.bp 文件中使用的 Blueprint 语法，并用 Blueprint 组件将 Android.bp 文件中定义的模块构建方法转化为对应的 ninja 构建规则。也就是说，soong 处理了 AOSP 中多种通用编程语言的复杂性。
+相较于基于 soong 构建系统与 Ninja 底层构建系统的模块间分析，对 AOSP 展开模块内分析拥有更大的复杂性。如第\ref{aosp-introduction}节所述，soong 为了解耦构建过程，借鉴了跨语言构建系统 “Bazel.build” 的语法定义了 Android.bp 文件中使用的 Blueprint 语法，并用 Blueprint 组件将 Android.bp 文件中定义的模块构建方法转化为对应的 ninja 构建规则。也就是说，soong 处理了 AOSP 中多种通用编程语言的复杂性。
 
 然而，soong 仅仅用于构建领域，进行模块内分析无法借助 soong 的组件降低语言复杂性。因此，为每种语言分别撰写分析程序成为 AOSP 模块内分析的唯一途径。尽管不同种语言间分析程序并无差异，但囿于工作量庞大，本文所设计的软件变更分析系统仅考虑 Java 语言在 AOSP 中的应用，并仅考虑 platform/frameworks 下的 67 个仓库，共计 5804 个模块。
 
