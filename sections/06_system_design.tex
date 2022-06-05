@@ -8,7 +8,7 @@ AOSP 是一个庞大的系统。截至 2021 年 10 月 1 日，AOSP 项目下共
 
 \subsubsection{数据爬取：repo\_crawler}
 
-由 AOSP 目录结构可知，AOSP 中仓库分布并无规则。分析单目录下仓库列表的方法有两类，一类是基于 .git 目录进行试探性测试的离线方法，一类是基于 AOSP 源码站的在线方法。该系统利用 Python 的 requests 和 bs4 获取 platform/frameworks 下所有仓库名称，该模块流程设计如图\ref{fig:archi-repo-crawler}所示。
+由 AOSP 目录结构可知，AOSP 中仓库的分布并无规则。分析单目录下仓库列表的方法有两类，一类是基于 .git 目录进行试探性测试的离线方法，一类是基于 AOSP 源码站的在线方法。该系统利用 Python 的 requests 和 bs4 获取 platform/frameworks 下所有仓库名称，该模块流程设计如图\ref{fig:archi-repo-crawler}所示。
 
 \begin{figure}[htb]
     \centering
@@ -170,7 +170,7 @@ cg\_generator 模块需要传入真实存在的 jar 文件。在具体实现上�
 
 \subsubsection{Repo\_crawler 实验结果}
 
-AOSP 中仓库分布并无规则，存在两同级目录属于不同仓库的情况（如 platfrom/frameworks/av 与 platform/frameworks/native），但同时也存在多级目录作为仓库被维护的情况（如 platform/frameworks/opt/bitmap 与 platform/frameworks/opt/car/services）。因此需要即时爬取并解析 googlesource 上的数据。 该系统利用 Python 的 requests 和 bs4 获取 platform/frameworks 下的 67 个仓库名称。该小型应用工具作为模块间分析流程的第一步，模块设计如图\ref{fig:design-repo-list}所示，具体实现可见 \href{https://github.com/AOSPworking/repo_crawler}{repo\_crawler}。
+AOSP 中仓库的分布并无规则，存在两同级目录属于不同仓库的情况（如 platfrom/frameworks/av 与 platform/frameworks/native），但同时也存在多级目录作为仓库被维护的情况（如 platform/frameworks/opt/bitmap 与 platform/frameworks/opt/car/services）。因此需要即时爬取并解析 googlesource 上的数据。 该系统利用 Python 的 requests 和 bs4 获取 platform/frameworks 下的 67 个仓库名称。该小型应用工具作为模块间分析流程的第一步，模块设计如图\ref{fig:design-repo-list}所示，具体实现可见 \href{https://github.com/AOSPworking/repo_crawler}{repo\_crawler}。
 
 \begin{figure}[htb]
     \centering
@@ -256,6 +256,6 @@ deps\_reflection 使用 Graphviz 展现模块间分析中文件影响关系。�
 
 cg\_generator 中所使用的调用图构建方法基于 Java Call Graph 开发。Java Call Graph 使用访问者模式这一时常出现在各类静态程序分析框架中的设计模式开发。访问者模式着重于对某个对象中各个元素的操作的自定义，访问者模式适用于无法接触被操作类源代码的场景，开发者通过该模式可以增加面向对象内各层级元素的新操作方法\cite{gamma1994design}。
 
-我在原本的 Java Call Graph 基础上，拆分了并部分重写了针对 method 与 instruction 两种类的访问方式，我所作出的改进大幅度改善了项目代码的可读性和可扩展性，可以针对 method 与 instruction 明确地进行不同的分析。具体而言，项目使用了 Apache BCEL 字节码操作库，确定给定的变更方法以及方法内的方法调用状况。在为所涉及的方法创建节点（包括实际节点与虚拟节点）的同时，构建方法与方法间的调用关系图，即对模块内其他方法造成的影响。完善的以方法调用指令为基础的访问者模式，可以根据变更方法的类名与方法名获取其影响的方法集合。除此之外，我增加了对 AOSP 结构与其中构建产物的适配（如 AOSP 构建过程得到的 jar 包中的部分 class 文件可能存在无代码区的问题）。所得结果如图\ref{fig:design-cg-generator}所示，该模块具体实现可见 \href{https://github.com/AOSPworking/cg_generator}{cg\_generator}。
+我在原本的 Java Call Graph 基础上，拆分了并部分重写了针对 method 与 instruction 两种类的访问方式，我所做出的改进大幅度改善了项目代码的可读性和可扩展性，可以针对 method 与 instruction 明确地进行不同的分析。具体而言，项目使用了 Apache BCEL 字节码操作库，确定给定的变更方法以及方法内的方法调用状况。在为所涉及的方法创建节点（包括实际节点与虚拟节点）的同时，构建方法与方法间的调用关系图，即对模块内其他方法造成的影响。完善的以方法调用指令为基础的访问者模式，可以根据变更方法的类名与方法名获取其影响的方法集合。除此之外，我增加了对 AOSP 结构与其中构建产物的适配（如 AOSP 构建过程得到的 jar 包中的部分 class 文件可能存在无代码区的问题）。所得结果如图\ref{fig:design-cg-generator}所示，该模块具体实现可见 \href{https://github.com/AOSPworking/cg_generator}{cg\_generator}。
 
 综上所述，本文所设计的软件变更分析系统在 AOSP 场景下重点体现在 “依照构建系统完成数据处理”、“变更获取”、“模块间分析” 以及 “模块内分析” 三点。本系统以 AOSP 下的 platform/frameworks 为例，在数据预处理方面获得其下的 67 个仓库，并与 5804 个模块建立了联系；在变更获取方面，根据给定的仓库路径和 commit id，能够成功做到获取存在变更的方法以及所属类；在模块间分析方面，成功将 2.7GB 的 build.ninja 文件精简为 670MB，大幅缩小了分析范围，且能够根据给定源文件使用 Ninja 内部数据结构导出全部影响关系；在模块内分析方面，能够根据给定的 jar 文件得到调用图，并根据输入的方法名得到所有与该方法相关的方法列表。

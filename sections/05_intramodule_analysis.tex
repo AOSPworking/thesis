@@ -36,7 +36,7 @@ CHA 算法的本质正如其名，是通过查找类的继承关系（即 “边
             \Require 输入接收器对象类型 $r$
             \Require 输入方法签名 $s$
             \Ensure 输出等价的方法签名 $s'$
-            \State $MethodList \Leftarrow c.getMethods$
+            \State $MethodList \Leftarrow r.getMethods$
             \For{$m \in MethodList$}
                 \If{$m$ is not an abstract method and $m.name == s.name$}
                     \State \Return $m$
